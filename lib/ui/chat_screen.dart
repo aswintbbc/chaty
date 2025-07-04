@@ -89,11 +89,27 @@ class ChatScreen extends StatefulWidget {
   /// from the edges of its container.
   final EdgeInsets? listPadding;
 
+  /// Optional name of the sender.
+  final String? senderName;
+
+  /// Optional image URL of the sender.
+  final String? senderImageUrl;
+
+  /// Optional name of the receiver.
+  final String? receiverName;
+
+  /// Optional image URL of the receiver.
+  final String? receiverImageUrl;
+
   /// Creates a [ChatScreen] widget.
   /// deleteMessage feature is enabled by default.
   const ChatScreen({
     required this.senderId,
     required this.receiverId,
+    this.senderName,
+    this.senderImageUrl,
+    this.receiverName,
+    this.receiverImageUrl,
     this.backgroundImage,
     this.appBar,
     this.backgroundColor,
@@ -131,7 +147,13 @@ class _ChatScreenState extends State<ChatScreen> {
       timestamp: DateTime.now(),
       status: MessageStatus.unread,
     );
-    chatService.sendMessage(message);
+    chatService.sendMessage(
+      message,
+      senderName: widget.senderName,
+      senderImageUrl: widget.senderImageUrl,
+      receiverName: widget.receiverName,
+      receiverImageUrl: widget.receiverImageUrl,
+    );
   }
 
   void _sendMediaMessage(

@@ -29,7 +29,13 @@ class ChatService {
   }
 
   /// Sends a new message and updates chat summary.
-  Future<void> sendMessage(Message message) async {
+  Future<void> sendMessage(
+    Message message, {
+    String? senderName,
+    String? senderImageUrl,
+    String? receiverName,
+    String? receiverImageUrl,
+  }) async {
     final chatId = getChatId(message.senderId, message.receiverId);
     DocumentReference messageRef = _firestore
         .collection('chats')
@@ -51,7 +57,8 @@ class ChatService {
                     : "📎 File");
 
     // Update chat summary
-    await _firestore.collection('chats').doc(chatId).set({
+    var metaData = {
+      'chatId': chatId,
       'lastMessage': lastMessageText,
       'lastMessageType': message.type.toString(),
       'lastMessageTime': FieldValue.serverTimestamp(),
@@ -62,7 +69,21 @@ class ChatService {
         '${message.senderId}': false,
         '${message.receiverId}': false,
       },
-    }, SetOptions(merge: true));
+      'userDetails': {
+        message.senderId: {
+          'name': senderName,
+          'imageUrl': senderImageUrl,
+        },
+        message.receiverId: {
+          'name': receiverName,
+          'imageUrl': receiverImageUrl,
+        },
+      }
+    };
+    await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .set(metaData, SetOptions(merge: true));
   }
 
   /// Updates the last seen timestamp for a user.

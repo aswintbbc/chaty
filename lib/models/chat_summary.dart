@@ -29,6 +29,12 @@ class ChatSummary {
   /// A map containing the count of unread messages for each user in the chat.
   final Map<String, int> unreadMessageCount;
 
+  /// Optional fields for displaying other user's name and image URL.
+  String? otherUserName;
+
+  /// Optional field for the other user's profile image URL.
+  String? otherUserImageUrl;
+
   /// Creates a new ChatSummary instance.
   ChatSummary({
     required this.chatId,
@@ -38,13 +44,22 @@ class ChatSummary {
     required this.users,
     required this.otherUserId,
     required this.lastMessageSenderId,
-    required this.unreadMessageCount, // 🔥 Initialize unreadCount
+    required this.unreadMessageCount, // 🔥 Initialize unreadCount\
+    this.otherUserName,
+    this.otherUserImageUrl,
   });
 
   /// Factory constructor to create a ChatSummary from Firestore data.
   /// The [currentUserId] is used to determine the other user's ID in the chat.
   factory ChatSummary.fromMap(Map<String, dynamic> map, String currentUserId) {
     try {
+      final otherId = (map['users'] is List &&
+              (map['users'] as List).isNotEmpty)
+          ? (map['users'] as List<dynamic>)
+              .map((e) => e.toString())
+              .firstWhere((id) => id != currentUserId, orElse: () => "Unknown")
+          : "Unknown";
+
       return ChatSummary(
         chatId: map['chatId'] ?? "",
         lastMessage: map['lastMessage'] ?? "No message",
@@ -61,12 +76,9 @@ class ChatSummary {
         lastMessageTime:
             (map['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
         users: List<String>.from(map['users'] ?? []),
-        otherUserId: (map['users'] is List && (map['users'] as List).isNotEmpty)
-            ? (map['users'] as List<dynamic>)
-                .map((e) => e.toString())
-                .firstWhere((id) => id != currentUserId,
-                    orElse: () => "Unknown")
-            : "Unknown",
+        otherUserId: otherId,
+        otherUserName: map['userDetails']?[otherId]?['name'],
+        otherUserImageUrl: map['userDetails']?[otherId]?['imageUrl'],
         unreadMessageCount: Map<String, int>.from(map['unreadMessageCount'] ??
             {}), // 🔥 Fetch unread count from Firestore
       );
@@ -96,6 +108,13 @@ class ChatSummary {
       'lastMessageSender': lastMessageSenderId,
       'unreadMessageCount':
           unreadMessageCount, // 🔥 Store unreadCount in Firestore
+      'userDetails': {
+        for (var userId in users)
+          userId: {
+            'name': userId == otherUserId ? otherUserName : null,
+            'imageUrl': userId == otherUserId ? otherUserImageUrl : null,
+          }
+      },
     };
   }
 }
